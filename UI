@@ -30,6 +30,21 @@ ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 local U, Tw = game:GetService("UserInputService"), game:GetService("TweenService")
 
 -- ฟังก์ชันช่วยเหลือ
+local function addToTheme(name, obj)
+    if not SaveTheme[name] then SaveTheme[name] = {} end
+    table.insert(SaveTheme[name], obj)
+end
+
+local function gl(i)
+    if type(i) == "number" then
+        return {Image = "rbxassetid://"..i, ImageRectSize = Vector2.new(0,0), ImageRectPosition = Vector2.new(0,0)}
+    elseif type(i) == "string" and i:find("rbxassetid://") then
+        return {Image = i, ImageRectSize = Vector2.new(0,0), ImageRectPosition = Vector2.new(0,0)}
+    else
+        return {Image = "rbxassetid://7072722740", ImageRectSize = Vector2.new(0,0), ImageRectPosition = Vector2.new(0,0)}
+    end
+end
+
 local function addCloseButton(parent, iconID)
     local CloseBtn = Instance.new("ImageButton")
     CloseBtn.Name = "CloseBtn"
@@ -38,9 +53,9 @@ local function addCloseButton(parent, iconID)
     CloseBtn.Position = UDim2.new(1, -5, 0, 5)
     CloseBtn.Size = UDim2.new(0, 20, 0, 20)
     CloseBtn.BackgroundTransparency = 1
-    CloseBtn.Image = iconID and gl(iconID).Image or "rbxassetid://7072722740"
-    CloseBtn.ImageRectSize = iconID and gl(iconID).ImageRectSize or Vector2.new(0,0)
-    CloseBtn.ImageRectOffset = iconID and gl(iconID).ImageRectPosition or Vector2.new(0,0)
+    CloseBtn.Image = gl(iconID).Image
+    CloseBtn.ImageRectSize = gl(iconID).ImageRectSize
+    CloseBtn.ImageRectOffset = gl(iconID).ImageRectPosition
     CloseBtn.ImageTransparency = 0.7
     CloseBtn.MouseButton1Click:Connect(function()
         parent.Visible = false
@@ -48,7 +63,7 @@ local function addCloseButton(parent, iconID)
     return CloseBtn
 end
 
--- ฟังก์ชันสร้าง Background แบบเดิม แต่เพิ่ม Close Button
+-- ฟังก์ชันสร้าง Background พร้อม Close Button
 function background(pl, t, d, i, ty, closeIconID)
     local RealBackground = Instance.new("Frame")
     local Background = Instance.new("Frame")
@@ -59,29 +74,27 @@ function background(pl, t, d, i, ty, closeIconID)
     local TextLabel_1 = Instance.new("TextLabel")
     local TextLabel_2 = Instance.new("TextLabel")
 
-    RealBackground.Name = "Real Background"
+    RealBackground.Name = "RealBackground"
     RealBackground.Parent = pl
     RealBackground.BackgroundTransparency = 1
-    RealBackground.BorderSizePixel = 0
-    RealBackground.Size = UDim2.new(1, 0, 0, 35)
+    RealBackground.Size = UDim2.new(1,0,0,35)
     RealBackground.ClipsDescendants = true
 
     Background.Name = "Background"
     Background.Parent = RealBackground
     Background.BackgroundColor3 = Color3.fromRGB(29,28,38)
-    Background.Size = UDim2.new(1, 0,1, 0)
+    Background.Size = UDim2.new(1,0,1,0)
     Background.ClipsDescendants = true
-
     addToTheme('Function.'..ty..'.Background', Background)
 
     UICorner_1.Parent = Background
 
     T_1.Name = "T"
     T_1.Parent = Background
-    T_1.AnchorPoint = Vector2.new(0, 0.5)
+    T_1.AnchorPoint = Vector2.new(0,0.5)
     T_1.BackgroundTransparency = 1
-    T_1.Position = UDim2.new(0, 0,0.5, 0)
-    T_1.Size = UDim2.new(1, 0,1, 0)
+    T_1.Position = UDim2.new(0,0,0.5,0)
+    T_1.Size = UDim2.new(1,0,1,0)
 
     UIListLayout_2.Parent = T_1
     UIListLayout_2.SortOrder = Enum.SortOrder.LayoutOrder
@@ -104,8 +117,7 @@ function background(pl, t, d, i, ty, closeIconID)
     TextLabel_1.TextXAlignment = Enum.TextXAlignment.Left
     TextLabel_1.Visible = d and d ~= ""
     TextLabel_1.AutomaticSize = Enum.AutomaticSize.Y
-    TextLabel_1.Name = 'Desc'
-
+    TextLabel_1.Name = "Desc"
     addToTheme('Text & Icon', TextLabel_1)
 
     TextLabel_2.Parent = T_1
@@ -119,22 +131,18 @@ function background(pl, t, d, i, ty, closeIconID)
     TextLabel_2.TextWrapped = true
     TextLabel_2.TextXAlignment = Enum.TextXAlignment.Left
     TextLabel_2.AutomaticSize = Enum.AutomaticSize.Y
-    TextLabel_2.Name = 'Title'
-
+    TextLabel_2.Name = "Title"
     addToTheme('Text & Icon', TextLabel_2)
 
-    -- ใส่ไอคอน Background
     if i and i ~= "" then
-        UIPadding_3.PaddingLeft = UDim.new(0, 50)
+        UIPadding_3.PaddingLeft = UDim.new(0,50)
         local Image = Instance.new("Frame")
         local Icon_1 = Instance.new("ImageLabel")
         local Frame_1 = Instance.new("Frame")
-
         Image.Name = "Image"
         Image.Parent = Background
         Image.BackgroundTransparency = 1
-        Image.Size = UDim2.new(0, 40,1, 0)
-
+        Image.Size = UDim2.new(0,40,1,0)
         Icon_1.Name = "Icon"
         Icon_1.Parent = Image
         Icon_1.AnchorPoint = Vector2.new(0.5,0.5)
@@ -145,35 +153,27 @@ function background(pl, t, d, i, ty, closeIconID)
         Icon_1.ImageRectSize = gl(i).ImageRectSize
         Icon_1.ImageRectOffset = gl(i).ImageRectPosition
         Icon_1.ImageTransparency = 0.7
-
         Frame_1.Parent = Image
         Frame_1.AnchorPoint = Vector2.new(1,0.5)
         Frame_1.BackgroundColor3 = Color3.fromRGB(255,255,255)
         Frame_1.BackgroundTransparency = 0.9
         Frame_1.Position = UDim2.new(1,0,0.5,0)
         Frame_1.Size = UDim2.new(0,1,0.7,0)
-
         addToTheme('Text & Icon', Icon_1)
         addToTheme('Text & Icon', Frame_1)
     end
 
-    -- เพิ่ม Close Button อัตโนมัติ
+    -- Close Button
     local closeBtn = addCloseButton(RealBackground, closeIconID)
 
-    -- ฟังก์ชันเสริมของ Background
     local f = {}
     function f:SetTextTransparencyTitle(vs)
-        tw({v = TextLabel_2, t = 0.15, s = Enum.EasingStyle.Linear, d = "Out", g = {TextTransparency = vs}}):Play()
-        if i and i ~= "" then
-            tw({v = Background.Image.Icon, t = 0.15, s = Enum.EasingStyle.Linear, d = "Out", g = {ImageTransparency = vs}}):Play()
-        end
+        Tw:Create(TextLabel_2, TweenInfo.new(0.15), {TextTransparency = vs}):Play()
+        if i and i ~= "" then Tw:Create(Background.Image.Icon, TweenInfo.new(0.15), {ImageTransparency = vs}):Play() end
     end
     function f:SetSizeT(vs) UIPadding_3.PaddingRight = UDim.new(0, vs) end
     function f:SetTitle(vs) TextLabel_2.Text = tostring(vs) end
-    function f:SetDesc(vs) 
-        TextLabel_1.Text = tostring(vs) 
-        TextLabel_1.Visible = vs and vs ~= ""
-    end
+    function f:SetDesc(vs) TextLabel_1.Text = tostring(vs); TextLabel_1.Visible = vs and vs ~= "" end
     function f:SetVisibleDesc(vs) TextLabel_2.Visible = vs end
 
     return RealBackground, f, closeBtn
