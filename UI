@@ -1,180 +1,71 @@
-Library = {}
-SaveTheme = {}
+--[[ EasyMenuLib Prototype (Updated)
 
--- ธีม
-local themes = {
-    index = {'Dark', 'Amethyst'},
-    Amethyst = {
-        ['Shadow'] = Color3.fromRGB(24, 24, 31),
-        ['Background'] = Color3.fromRGB(29, 28, 38),
-        ['Page'] = Color3.fromRGB(24, 24, 31),
-        ['Main'] = Color3.fromRGB(91, 68, 209),
-        ['Text & Icon'] = Color3.fromRGB(255, 255, 255),
-        ['Function'] = {}
-    },
-    Dark = {
-        ['Shadow'] = Color3.fromRGB(15, 15, 15),
-        ['Background'] = Color3.fromRGB(20, 20, 20),
-        ['Page'] = Color3.fromRGB(18, 18, 18),
-        ['Main'] = Color3.fromRGB(50, 50, 50),
-        ['Text & Icon'] = Color3.fromRGB(230, 230, 230),
-        ['Function'] = {}
-    }
-}
+รวมระบบ ImageButton เปิด/ปิดเมนู + ลากปุ่มได้ + Animation
 
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "Dummy Kawaii"
-ScreenGui.Parent = not game:GetService("RunService"):IsStudio() and game:GetService("CoreGui") or game:GetService("Players").LocalPlayer.PlayerGui
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+กดที่รูปภาพเพื่อเปิด/ปิดเมนู
 
-local U, Tw = game:GetService("UserInputService"), game:GetService("TweenService")
+รองรับการลากปุ่มด้วยเมาส์หรือทัช --]]
 
--- ฟังก์ชันช่วยเหลือ
-local function addToTheme(name, obj)
-    if not SaveTheme[name] then SaveTheme[name] = {} end
-    table.insert(SaveTheme[name], obj)
+
+local Players = game:GetService("Players") local TweenService = game:GetService("TweenService") local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer local playerGui = player:WaitForChild("PlayerGui")
+
+-- Main GUI container local screenGui = Instance.new("ScreenGui") screenGui.Name = "EasyMenuLibGUI" screenGui.ResetOnSpawn = false screenGui.Parent = playerGui
+
+-- สร้าง ImageButton (ปุ่มรูป) มุมขวาบน local toggleBtn = Instance.new("ImageButton") toggleBtn.Name = "ToggleMenuButton" toggleBtn.Parent = screenGui toggleBtn.Size = UDim2.new(0, 60, 0, 60) toggleBtn.Position = UDim2.new(1, -70, 0, 12) toggleBtn.AnchorPoint = Vector2.new(0, 0) toggleBtn.BackgroundTransparency = 1 toggleBtn.Image = "rbxassetid://119073019742434" -- เปลี่ยนเป็น ID รูปของคุณได้เลย
+
+toggleBtn.Rotation = 0
+
+-- เมนูหลัก (Frame) local main = Instance.new("Frame") main.Name = "MainFrame" main.Parent = screenGui main.Size = UDim2.new(0, 520, 0, 420) main.Position = UDim2.new(0.5, -260, -1, 0) main.AnchorPoint = Vector2.new(0.5, 0) main.BackgroundColor3 = Color3.fromRGB(25, 25, 25) main.BackgroundTransparency = 0.05 main.Visible = true
+
+-- ป้ายชื่อเมนู local title = Instance.new("TextLabel") title.Parent = main title.Size = UDim2.new(1, 0, 0, 50) title.BackgroundTransparency = 1 title.Text = "EasyMenuLib - Farm Settings" title.TextColor3 = Color3.fromRGB(255, 255, 255) title.Font = Enum.Font.SourceSansBold title.TextSize = 24
+
+title.Position = UDim2.new(0, 0, 0, 10)
+
+-- สถานะเปิด/ปิด local visible = false
+
+-- ฟังก์ชัน toggle เมนู + แอนิเมชัน local function toggleMenu() visible = not visible
+
+if visible then
+    TweenService:Create(main, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        Position = UDim2.new(0.5, -260, 0.15, 0)
+    }):Play()
+    TweenService:Create(toggleBtn, TweenInfo.new(0.3), {Rotation = 90}):Play()
+else
+    TweenService:Create(main, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+        Position = UDim2.new(0.5, -260, -1, 0)
+    }):Play()
+    TweenService:Create(toggleBtn, TweenInfo.new(0.3), {Rotation = 0}):Play()
 end
 
-local function gl(i)
-    if type(i) == "number" then
-        return {Image = "rbxassetid://"..i, ImageRectSize = Vector2.new(0,0), ImageRectPosition = Vector2.new(0,0)}
-    elseif type(i) == "string" and i:find("rbxassetid://") then
-        return {Image = i, ImageRectSize = Vector2.new(0,0), ImageRectPosition = Vector2.new(0,0)}
-    else
-        return {Image = "rbxassetid://7072722740", ImageRectSize = Vector2.new(0,0), ImageRectPosition = Vector2.new(0,0)}
-    end
 end
 
-local function addCloseButton(parent, iconID)
-    local CloseBtn = Instance.new("ImageButton")
-    CloseBtn.Name = "CloseBtn"
-    CloseBtn.Parent = parent
-    CloseBtn.AnchorPoint = Vector2.new(1, 0)
-    CloseBtn.Position = UDim2.new(1, -5, 0, 5)
-    CloseBtn.Size = UDim2.new(0, 20, 0, 20)
-    CloseBtn.BackgroundTransparency = 1
-    CloseBtn.Image = gl(iconID).Image
-    CloseBtn.ImageRectSize = gl(iconID).ImageRectSize
-    CloseBtn.ImageRectOffset = gl(iconID).ImageRectPosition
-    CloseBtn.ImageTransparency = 0.7
-    CloseBtn.MouseButton1Click:Connect(function()
-        parent.Visible = false
+toggleBtn.MouseButton1Click:Connect(toggleMenu)
+
+-- ระบบลากปุ่ม (Drag) local dragging = false local dragInput, dragStart, startPos
+
+local function update(input) local delta = input.Position - dragStart toggleBtn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y) end
+
+toggleBtn.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = true dragStart = input.Position startPos = toggleBtn.Position
+
+input.Changed:Connect(function()
+        if input.UserInputState == Enum.UserInputState.End then
+            dragging = false
+        end
     end)
-    return CloseBtn
 end
 
--- ฟังก์ชันสร้าง Background พร้อม Close Button
-function background(pl, t, d, i, ty, closeIconID)
-    local RealBackground = Instance.new("Frame")
-    local Background = Instance.new("Frame")
-    local UICorner_1 = Instance.new("UICorner")
-    local T_1 = Instance.new("Frame")
-    local UIListLayout_2 = Instance.new("UIListLayout")
-    local UIPadding_3 = Instance.new("UIPadding")
-    local TextLabel_1 = Instance.new("TextLabel")
-    local TextLabel_2 = Instance.new("TextLabel")
+end)
 
-    RealBackground.Name = "RealBackground"
-    RealBackground.Parent = pl
-    RealBackground.BackgroundTransparency = 1
-    RealBackground.Size = UDim2.new(1,0,0,35)
-    RealBackground.ClipsDescendants = true
+toggleBtn.InputChanged:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end end)
 
-    Background.Name = "Background"
-    Background.Parent = RealBackground
-    Background.BackgroundColor3 = Color3.fromRGB(29,28,38)
-    Background.Size = UDim2.new(1,0,1,0)
-    Background.ClipsDescendants = true
-    addToTheme('Function.'..ty..'.Background', Background)
+UserInputService.InputChanged:Connect(function(input) if dragging and input == dragInput then update(input) end end)
 
-    UICorner_1.Parent = Background
+-- โหลดตำแหน่งเดิม (optional) local px = player:GetAttribute("MenuBtnPosX") local py = player:GetAttribute("MenuBtnPosY") if px and py then toggleBtn.Position = UDim2.new(1, px, 0, py) end
 
-    T_1.Name = "T"
-    T_1.Parent = Background
-    T_1.AnchorPoint = Vector2.new(0,0.5)
-    T_1.BackgroundTransparency = 1
-    T_1.Position = UDim2.new(0,0,0.5,0)
-    T_1.Size = UDim2.new(1,0,1,0)
+-- บันทึกตำแหน่งเมื่อปล่อย local function savePosition() local p = Players.LocalPlayer p:SetAttribute("MenuBtnPosX", toggleBtn.Position.X.Offset) p:SetAttribute("MenuBtnPosY", toggleBtn.Position.Y.Offset) end
 
-    UIListLayout_2.Parent = T_1
-    UIListLayout_2.SortOrder = Enum.SortOrder.LayoutOrder
-    UIListLayout_2.VerticalAlignment = Enum.VerticalAlignment.Center
+toggleBtn.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false savePosition() end end)
 
-    UIPadding_3.Parent = T_1
-    UIPadding_3.PaddingLeft = UDim.new(0,13)
-    UIPadding_3.PaddingRight = UDim.new(0,70)
-
-    TextLabel_1.Parent = T_1
-    TextLabel_1.BackgroundTransparency = 1
-    TextLabel_1.Size = UDim2.new(1,0,0,14)
-    TextLabel_1.Font = Enum.Font.GothamBold
-    TextLabel_1.RichText = true
-    TextLabel_1.Text = tostring(d)
-    TextLabel_1.TextColor3 = Color3.fromRGB(255,255,255)
-    TextLabel_1.TextSize = 10
-    TextLabel_1.TextTransparency = 0.7
-    TextLabel_1.TextWrapped = true
-    TextLabel_1.TextXAlignment = Enum.TextXAlignment.Left
-    TextLabel_1.Visible = d and d ~= ""
-    TextLabel_1.AutomaticSize = Enum.AutomaticSize.Y
-    TextLabel_1.Name = "Desc"
-    addToTheme('Text & Icon', TextLabel_1)
-
-    TextLabel_2.Parent = T_1
-    TextLabel_2.BackgroundTransparency = 1
-    TextLabel_2.Size = UDim2.new(1,0,0,14)
-    TextLabel_2.Font = Enum.Font.GothamBold
-    TextLabel_2.RichText = true
-    TextLabel_2.Text = tostring(t)
-    TextLabel_2.TextColor3 = Color3.fromRGB(255,255,255)
-    TextLabel_2.TextSize = 12
-    TextLabel_2.TextWrapped = true
-    TextLabel_2.TextXAlignment = Enum.TextXAlignment.Left
-    TextLabel_2.AutomaticSize = Enum.AutomaticSize.Y
-    TextLabel_2.Name = "Title"
-    addToTheme('Text & Icon', TextLabel_2)
-
-    if i and i ~= "" then
-        UIPadding_3.PaddingLeft = UDim.new(0,50)
-        local Image = Instance.new("Frame")
-        local Icon_1 = Instance.new("ImageLabel")
-        local Frame_1 = Instance.new("Frame")
-        Image.Name = "Image"
-        Image.Parent = Background
-        Image.BackgroundTransparency = 1
-        Image.Size = UDim2.new(0,40,1,0)
-        Icon_1.Name = "Icon"
-        Icon_1.Parent = Image
-        Icon_1.AnchorPoint = Vector2.new(0.5,0.5)
-        Icon_1.BackgroundTransparency = 1
-        Icon_1.Position = UDim2.new(0.5,0,0.5,0)
-        Icon_1.Size = UDim2.new(0,20,0,20)
-        Icon_1.Image = gl(i).Image
-        Icon_1.ImageRectSize = gl(i).ImageRectSize
-        Icon_1.ImageRectOffset = gl(i).ImageRectPosition
-        Icon_1.ImageTransparency = 0.7
-        Frame_1.Parent = Image
-        Frame_1.AnchorPoint = Vector2.new(1,0.5)
-        Frame_1.BackgroundColor3 = Color3.fromRGB(255,255,255)
-        Frame_1.BackgroundTransparency = 0.9
-        Frame_1.Position = UDim2.new(1,0,0.5,0)
-        Frame_1.Size = UDim2.new(0,1,0.7,0)
-        addToTheme('Text & Icon', Icon_1)
-        addToTheme('Text & Icon', Frame_1)
-    end
-
-    -- Close Button
-    local closeBtn = addCloseButton(RealBackground, closeIconID)
-
-    local f = {}
-    function f:SetTextTransparencyTitle(vs)
-        Tw:Create(TextLabel_2, TweenInfo.new(0.15), {TextTransparency = vs}):Play()
-        if i and i ~= "" then Tw:Create(Background.Image.Icon, TweenInfo.new(0.15), {ImageTransparency = vs}):Play() end
-    end
-    function f:SetSizeT(vs) UIPadding_3.PaddingRight = UDim.new(0, vs) end
-    function f:SetTitle(vs) TextLabel_2.Text = tostring(vs) end
-    function f:SetDesc(vs) TextLabel_1.Text = tostring(vs); TextLabel_1.Visible = vs and vs ~= "" end
-    function f:SetVisibleDesc(vs) TextLabel_2.Visible = vs end
-
-    return RealBackground, f, closeBtn
-end
+print("✅ EasyMenuLib Prototype Loaded - with ImageButton Toggle & Drag")
